@@ -1,0 +1,21 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package myfacebookserver;
+
+/**
+ *
+ * @author Riyad
+ */
+public class Constants {
+    public static final int ROSTER_STATUS_PENDING = 0;
+    public static final int ROSTER_STATUS_ACCEPTED = 1;
+    public static final int NOTIFICATION_TYPE_FRIEND_REQUEST = 0;
+    public static final int NOTIFICATION_TYPE_OTHER = 1;
+    public static final int NOTIFICATION_STATUS_PENDING = 0;
+    public static final int NOTIFICATION_STATUS_SENT = 1;
+    
+    public static final String SOCIAL_NETWORK_SERVANT_OBJ_NAME = "SocialNetworkServant";
+    public static final String USER_OBJ_NAME = "User";
+}

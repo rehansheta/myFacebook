@@ -1,0 +1,102 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package myfacebookserver;
+
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.ListIterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import stubs.Post;
+import stubs.UserAccountStub;
+import stubs.UserProfile;
+import stubs.UserProfileStub;
+
+/**
+ *
+ * @author Rehan
+ */
+public class UserAccount implements UserAccountStub {
+
+    UserProfileStub userProfileStub;
+    ArrayList<UserProfileStub> friendsList;
+
+    public void setFriendsList(ArrayList<UserProfileStub> friendsList) {
+        this.friendsList = friendsList;
+    }
+
+    public void setUserProfile(UserProfileStub userProfileStub) {
+        this.userProfileStub = userProfileStub;
+    }
+
+    @Override
+    public ArrayList<UserProfileStub> getFriendsList() {
+        return friendsList;
+    }
+
+    @Override
+    public UserProfileStub viewProfile() throws RemoteException {
+        return DatabaseOperations.getUserProfile(userProfileStub.getUserID());
+    }
+
+    @Override
+    public String updateProfile(UserProfile profile) throws RemoteException {
+        return DatabaseOperations.updateProfile(profile);
+    }
+
+    @Override
+    public ArrayList<Post> getUpdates(String userID) throws RemoteException {
+
+        ListIterator<UserProfileStub> listIterator = friendsList.listIterator();
+
+        String sql = "SELECT post FROM wall WHERE sender in ";
+        String idList = "('" + userID + "'";
+
+        while (listIterator.hasNext()) {
+            idList += ", '" + listIterator.next().getUserID() + "'";
+        }
+
+        idList += ")";
+
+        sql += idList + " or receiver in " + idList + " order by idwall desc";
+
+        try {
+            return DatabaseOperations.readJavaObject(sql);
+
+        } catch (Exception ex) {
+            Logger.getLogger(UserAccount.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return new ArrayList<Post>();
+    }
+
+    @Override
+    public String postUpdates(Post post) throws RemoteException {
+        String response = null;
+        AsyncCallback asyncCallback;
+
+        String userID = post.getSender();
+        String friendID = post.getReceiver();
+
+        try {
+            if (DatabaseOperations.writeJavaObject(userID, friendID, post)) {
+                response = "Message successfully posted on " + friendID + "'s wall.";
+                System.out.println("<<WALL POST>> FROM: \'" + userID + "\' TO: \'" + friendID + "\'");
+
+                // push back this post history as they are online
+                ArrayList<Post> posts = new ArrayList<Post>();
+                posts.add(post);
+                SocialNetworkServant.callBackMap.get(userID).pushPost(posts);
+
+                asyncCallback = new AsyncCallback(null, friendID, posts, AsyncCallback.PUSH_POST);
+                asyncCallback.start();
+            } else {
+                response = "Message posting failed.";
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(UserAccount.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return response;
+    }
+}

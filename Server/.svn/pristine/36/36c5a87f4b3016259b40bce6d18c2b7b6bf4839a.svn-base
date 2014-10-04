@@ -1,0 +1,354 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package myfacebookserver;
+
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.ListIterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import stubs.CallBackStub;
+import stubs.UserAccountStub;
+import stubs.UserProfileStub;
+
+/**
+ *
+ * @author Rehan
+ */
+public class SocialNetworkServant implements stubs.SocialNetworkServantStub {
+
+    DatabaseOperations databaseOperations;
+    HashMap<String, CallBackStub> callBackMap;
+
+    public SocialNetworkServant() {
+        databaseOperations = new DatabaseOperations();
+        databaseOperations.openConnection();
+
+        callBackMap = new HashMap<String, CallBackStub>();
+    }
+
+    @Override
+    public UserAccountStub createAccount(String userID, String password) throws RemoteException {
+        UserAccountStub stub = null;
+
+        if (!databaseOperations.userExists(userID)) {
+            System.out.println("We got a new user !! hurray !!!");
+            String sql = "insert into userproperties (user_id, password) values('" + userID + "', '" + password + "')";
+            if (databaseOperations.executeUpdate(sql)) {
+                UserAccount newUser = new UserAccount();
+
+                // add profile to an account
+                UserProfile userProfile = new UserProfile();
+                userProfile.setUserID(userID);  // this is the only profile info
+                UserProfileStub userProfileStub = (UserProfileStub) UnicastRemoteObject.exportObject(userProfile, 0);
+                newUser.setUserProfile(userProfileStub);
+
+                // add friend profile ROR
+                ArrayList<UserProfileStub> friendsList = getFriends(userID);
+                newUser.setFriendsList(friendsList);
+
+                stub = (UserAccountStub) UnicastRemoteObject.exportObject(newUser, 0);
+
+                System.out.println("user \'" + userID + "\' added successfully !!");
+
+                callBackMap.put(userID, null);  // user logged in but still no call back registered
+
+                // we can check for online users with this hashmap testing
+                if (callBackMap.containsKey(userID)) {
+                    System.out.println("User is online");
+                }
+
+            } else {
+                System.out.println("Can't update database !!!");
+            }
+        } else {
+            System.out.println("Uppps !!! Someone has already taken this name !!!");
+        }
+        return stub;
+    }
+
+    @Override
+    public UserAccountStub login(String userID, String password) throws RemoteException {
+        UserAccountStub stub = null;
+
+        if (databaseOperations.userExists(userID)) {
+            if (databaseOperations.passwordMatches(userID, password)) {
+                System.out.println("User \'" + userID + "\' has logged in !! hurray !!!");
+                UserAccount newUser = new UserAccount();
+
+                // add profile to an account and get all profile info
+                UserProfile userProfile = getUserProfile(userID);
+                UserProfileStub userProfileStub = (UserProfileStub) UnicastRemoteObject.exportObject(userProfile, 0);
+                newUser.setUserProfile(userProfileStub);
+
+                // add friend profile ROR
+                ArrayList<UserProfileStub> friendsList = getFriends(userID);
+                newUser.setFriendsList(friendsList);
+
+                // creation of user account stub
+                stub = (UserAccountStub) UnicastRemoteObject.exportObject(newUser, 0);
+            } else {
+                System.out.println("User \'" + userID + "\' entered a wrong password !!!");
+            }
+
+            callBackMap.put(userID, null);  // user logged in but still no call back registered
+
+            // we can check for online users with this hashmap testing
+            if (callBackMap.containsKey(userID)) {
+                System.out.println("User is online");
+            }
+        } else {
+            System.out.println("Ohho !! This username does not exist !!!");
+        }
+        return stub;
+    }
+
+    @Override
+    public ArrayList<UserProfileStub> searchForFriends(String criteriaName, String criteriaCity, String criteriaCollege) throws RemoteException {
+        String sql = null;
+        ArrayList<UserProfileStub> userProfileList = new ArrayList<UserProfileStub>();
+        ResultSet resultSet = null;
+
+        sql = "SELECT * FROM userproperties WHERE ";
+
+        if (criteriaName != null && criteriaName.length() > 0) {
+            sql += "user_name like '%" + criteriaName + "%'";
+        }
+        if (criteriaCity != null && criteriaCity.length() > 0) {
+            if (criteriaName != null && criteriaName.length() > 0) {
+                sql += " or ";
+            }
+            sql += "city like '%" + criteriaCity + "%'";
+        }
+        if (criteriaCollege != null && criteriaCollege.length() > 0) {
+            if ((criteriaName != null && criteriaName.length() > 0) || (criteriaCity != null && criteriaCity.length() > 0)) {
+                sql += " or ";
+            }
+            sql += "college like '%" + criteriaCollege + "%'";
+        } else if ((criteriaName == null || criteriaName.length() < 1) && (criteriaCity == null || criteriaCity.length() < 1)) {
+            // no criteria selected, return empty array
+            return userProfileList;
+        }
+        //sql = "SELECT * FROM userproperties WHERE user_name like '%" + criteriaName + "%' or city like '%" + criteriaCity + "%'or college like '%" + criteriaCollege + "%'";
+
+        resultSet = databaseOperations.executeQuery(sql);
+
+        try {
+            System.out.println("Search result::");
+            while (resultSet.next()) {
+                UserProfile newProfile = new UserProfile();
+                String userID = resultSet.getString("user_id");
+                String userName = resultSet.getString("user_name");
+                String userProfession = resultSet.getString("profession");
+                String userCity = resultSet.getString("city");
+                String userCompany = resultSet.getString("company");
+                String userCollege = resultSet.getString("college");
+                String userGraduationYear = resultSet.getString("graduation_year");
+
+                newProfile.setUserID(userID);
+                newProfile.setUserName(userName);
+                newProfile.setProfession(userProfession);
+                newProfile.setCity(userCity);
+                newProfile.setCompany(userCompany);
+                newProfile.setCollege(userCollege);
+                newProfile.setGraduationYear(userGraduationYear);
+
+                UserProfileStub t = (UserProfileStub) UnicastRemoteObject.exportObject(newProfile, 0);
+                System.out.print(t.getUserID() + " " + t.getUserName() + " " + t.getProfession() + " " + t.getCity());
+                System.out.println(" " + t.getCompany() + " " + t.getCollege() + " " + t.getGraduationYear());
+                userProfileList.add(t);
+
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(SocialNetworkServant.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return userProfileList;
+    }
+
+    // return value 0 = not friend
+    // return value 1 = friend
+    // return value 2 = pending
+    public int isMyFriend(String userID, String friendID) {
+        try {
+            String sql = "select * from roster where user_id = '" + userID + "' and roster_id = '" + friendID + "'";
+            ResultSet resultSet = databaseOperations.executeQuery(sql);
+
+            while (resultSet.next()) {
+                int status = resultSet.getInt("status");
+                if (status == Constants.ROSTER_STATUS_PENDING) {
+                    return 2;
+                } else if (status == Constants.ROSTER_STATUS_ACCEPTED) {
+                    return 1;
+                }
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(SocialNetworkServant.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return 0;
+    }
+
+    @Override
+    public String inviteFriend(String userID, String friendID) throws RemoteException {
+        String response = null;
+
+        if (isMyFriend(userID, friendID) == 1) {
+            response = friendID + " is already in your friend list";
+        } else if (isMyFriend(userID, friendID) == 2) {
+            response = "A friend request is already sent to " + friendID;
+        } else if (databaseOperations.userExists(friendID)) {
+            String sql = "insert into roster (user_id, roster_id, status) values('" + userID + "', '" + friendID + "', '" + Constants.ROSTER_STATUS_PENDING + "')";
+            if (databaseOperations.executeUpdate(sql)) {
+                System.out.println("user \'" + userID + "\' wants to add the friend \'" + friendID + "\' !!");
+                sql = "insert into notification (user_id, type, noti_from, status) values('" + friendID + "', '" + Constants.NOTIFICATION_TYPE_FRIEND_REQUEST + "', '"
+                        + userID + "', '" + Constants.NOTIFICATION_STATUS_PENDING + "')";
+
+                if (databaseOperations.executeUpdate(sql)) {
+                    response = "A notification is sent to the friend :)";
+                    System.out.println("A notification is sent to the friend \'" + friendID + "\' !!");
+                } else {
+                    System.out.println("Can't update database !!!");
+                }
+            } else {
+                System.out.println("Can't update database !!!");
+            }
+
+            if (callBackMap.containsKey(friendID)) {
+                CallBackStub callBack = callBackMap.get(friendID);
+
+                ArrayList<UserProfileStub> userProfileList = new ArrayList<UserProfileStub>();
+                UserProfile profile = getUserProfile(userID);
+                UserProfileStub userProfileStub = (UserProfileStub) UnicastRemoteObject.exportObject(profile, 0);
+                userProfileList.add(userProfileStub);
+
+                int decision = callBack.pushRequest(userProfileList);
+
+                if (decision == 1) {
+                    sql = "insert into roster (user_id, roster_id, status) values('" + userID + "', '" + friendID + "', '" + Constants.ROSTER_STATUS_ACCEPTED + "')";
+                    System.out.println("online friend \'" + friendID + "\' excepted the request");
+                } else if (decision == 2) {
+                    sql = "delete from roster where roster_id = \'" + friendID + "\'";
+                    System.out.println("online friend \'" + friendID + "\' neglected the request");
+                }
+
+                if (!databaseOperations.executeUpdate(sql)) {
+                    System.out.println("Can't update database !!!");
+                }
+                sql = "insert into notification (user_id, type, noti_from, status) values('" + friendID + "', '" + Constants.NOTIFICATION_TYPE_FRIEND_REQUEST + "', '"
+                        + userID + "', '" + Constants.NOTIFICATION_STATUS_SENT + "')";
+                if (!databaseOperations.executeUpdate(sql)) {
+                    System.out.println("Can't update database !!!");
+                }
+            }
+
+        } else {
+            response = "This username does not exists";
+            System.out.println("Uppps !! This username does not exist !!!");
+        }
+        return response;
+    }
+
+    public ArrayList<UserProfileStub> getFriends(String userID) throws RemoteException {
+        ArrayList<UserProfileStub> listFriendsStub = new ArrayList<UserProfileStub>();
+        ArrayList<String> listFriends = new ArrayList<String>();
+        ResultSet resultSet;
+
+        System.out.println("user \'" + userID + "\' is retrieving his friends !!!");
+        listFriends = databaseOperations.getFrindsList(userID);
+
+        ListIterator<String> listIterator = listFriends.listIterator();
+
+        System.out.println("Friend List::");
+        while (listIterator.hasNext()) {
+            //User newUser = new UserAccount();
+            String friendID = listIterator.next();
+            System.out.println(friendID);
+
+            String sql = "SELECT * FROM userproperties WHERE user_id = \'" + friendID + "\'";
+            resultSet = databaseOperations.executeQuery(sql);
+            try {
+                while (resultSet.next()) {
+                    UserProfile newUser = new UserProfile();
+                    String userId = resultSet.getString("user_id");
+                    String userName = resultSet.getString("user_name");
+                    String userProfession = resultSet.getString("profession");
+                    String userCity = resultSet.getString("city");
+                    String userCompany = resultSet.getString("company");
+                    String userCollege = resultSet.getString("college");
+                    String userGraduationYear = resultSet.getString("graduation_year");
+
+                    newUser.setUserID(userId);
+                    newUser.setUserName(userName);
+                    newUser.setProfession(userProfession);
+                    newUser.setCity(userCity);
+                    newUser.setCompany(userCompany);
+                    newUser.setCollege(userCollege);
+                    newUser.setGraduationYear(userGraduationYear);
+
+                    UserProfileStub t = (UserProfileStub) UnicastRemoteObject.exportObject(newUser, 0);
+                    System.out.print(t.getUserID() + " " + t.getUserName() + " " + t.getProfession() + " " + t.getCity());
+                    System.out.println(" " + t.getCompany() + " " + t.getCollege() + " " + t.getGraduationYear());
+                    listFriendsStub.add(t);
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(SocialNetworkServant.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        return listFriendsStub;
+    }
+
+    public UserProfile getUserProfile(String userID) throws RemoteException {
+        UserProfile userProfile = new UserProfile();
+        ResultSet resultSet;
+
+        System.out.println("Retrieving information of the user \'" + userID + "\' !!!");
+        String sql = "SELECT * FROM userproperties WHERE user_id = \'" + userID + "\'";
+        resultSet = databaseOperations.executeQuery(sql);
+        try {
+            while (resultSet.next()) {
+                String userId = resultSet.getString("user_id");
+                String userName = resultSet.getString("user_name");
+                String userProfession = resultSet.getString("profession");
+                String userCity = resultSet.getString("city");
+                String userCompany = resultSet.getString("company");
+                String userCollege = resultSet.getString("college");
+                String userGraduationYear = resultSet.getString("graduation_year");
+
+                userProfile.setUserID(userId);
+                userProfile.setUserName(userName);
+                userProfile.setProfession(userProfession);
+                userProfile.setCity(userCity);
+                userProfile.setCompany(userCompany);
+                userProfile.setCollege(userCollege);
+                userProfile.setGraduationYear(userGraduationYear);
+
+                //userProfile = (UserProfileStub) UnicastRemoteObject.exportObject(newUser, 0);
+                System.out.print(userProfile.getUserID() + " " + userProfile.getUserName() + " " + userProfile.getProfession() + " " + userProfile.getCity());
+                System.out.println(" " + userProfile.getCompany() + " " + userProfile.getCollege() + " " + userProfile.getGraduationYear());
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(SocialNetworkServant.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return userProfile;
+    }
+
+    @Override
+    public boolean registerCallBack(String userID, CallBackStub callBack) throws RemoteException {
+        callBackMap.put(userID, callBack);
+        return true;
+    }
+
+    @Override
+    public boolean logout(String userID) throws RemoteException {
+        callBackMap.remove(userID);
+        System.out.println(userID + " logged out");
+        return true;
+    }
+}
