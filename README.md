@@ -15,5 +15,6 @@ Install
 -------
 1. Change the registry host in myFacebook.Constants.java of Client project
 2. Create database using the provided sql sript in Server project
-3. Compile both the project
-4. See the link to run the projects: http://docs.oracle.com/javase/tutorial/rmi/running.html
+3. Change database URL and username-password in myfacebookserver.DatabaseOperations.java of Server project
+4. Compile both the project
+5. See the link to run the projects: http://docs.oracle.com/javase/tutorial/rmi/running.html
