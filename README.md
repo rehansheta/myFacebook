@@ -14,7 +14,7 @@ The UserAccount objects should maintain a list of friends' RORs and an informati
 Install
 -------
 1. Change the registry host in myFacebook.Constants.java of Client project
-2. Create database using the provided sql sript in Server project
+2. Create database using the provided sql script in Server project
 3. Change database URL and username-password in myfacebookserver.DatabaseOperations.java of Server project
 4. Compile both the project
-5. See the link to run the projects: http://docs.oracle.com/javase/tutorial/rmi/running.html
+5. See the link to run the projects: <url>http://docs.oracle.com/javase/tutorial/rmi/running.html</url>
