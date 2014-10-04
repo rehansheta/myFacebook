@@ -1,0 +1,70 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package myfacebookserver;
+
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import stubs.SocialNetworkServantStub;
+
+/**
+ *
+ * @author Riyad
+ */
+public class MyFacebookServer {
+
+    void test() {
+        String sql = "insert into userproperties (user_id, password) values('sheta', 'sheta')";
+        DatabaseOperations databaseOperations = new DatabaseOperations();
+        databaseOperations.openConnection();
+        databaseOperations.executeUpdate(sql);
+        Post p = new Post();
+        p.setContent("hello boss");
+        try {
+            long id = databaseOperations.writeJavaObject(p);
+            Post t = (Post) databaseOperations.readJavaObject(id);
+            System.out.println(t.getContent());
+        } catch (Exception ex) {
+            Logger.getLogger(MyFacebookServer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        databaseOperations.closeConnection();
+    }
+    
+    void init() {
+        try {
+            Registry registry = LocateRegistry.getRegistry();
+
+            SocialNetworkServant obj = new SocialNetworkServant();
+            SocialNetworkServantStub stub = (SocialNetworkServantStub) UnicastRemoteObject.exportObject(obj, 0);
+            registry.rebind(Constants.SOCIAL_NETWORK_SERVANT_OBJ_NAME, stub);
+
+            System.out.println("Service registration complete");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public static void main(String[] args) {
+        MyFacebookServer server = new MyFacebookServer();
+        SocialNetworkServant servant = new SocialNetworkServant();
+        try {
+            //servant.createAccount("c", "c");
+            //servant.login("riyad", "sheta");
+            servant.login("a", "a");
+//            servant.inviteFriend("riyad", "a");
+            //servant.searchForFriends("riyad", "dha", "utsa");
+            servant.getFriends("riyad");
+            
+            
+        } catch (RemoteException ex) {
+            Logger.getLogger(MyFacebookServer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        server.init();
+    }
+}

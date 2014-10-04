@@ -1,0 +1,33 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package myfacebookserver;
+
+import java.io.Serializable;
+
+/**
+ *
+ * @author Riyad
+ */
+public class Post implements Serializable {
+    private String content;
+    private String sender;
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getSender() {
+        return sender;
+    }
+
+    public void setSender(String sender) {
+        this.sender = sender;
+    }
+    
+}

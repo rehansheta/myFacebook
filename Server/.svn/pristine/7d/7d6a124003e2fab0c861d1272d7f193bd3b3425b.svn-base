@@ -1,0 +1,21 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package stubs;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+
+/**
+ *
+ * @author Riyad
+ */
+public interface UserAccountStub extends Remote {
+    public ArrayList<UserProfileStub> getFriendsList() throws RemoteException;
+    public UserProfileStub viewProfile() throws RemoteException;
+    public void updateProfile(String username, String profession, String company, String college, String gradYear, String city) throws RemoteException;
+    public void getUpdates() throws RemoteException;
+    public void postUpdates() throws RemoteException;
+}

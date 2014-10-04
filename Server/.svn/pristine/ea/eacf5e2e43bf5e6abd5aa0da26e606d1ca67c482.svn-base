@@ -1,0 +1,49 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package myfacebookserver;
+
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import stubs.UserAccountStub;
+import stubs.UserProfileStub;
+
+/**
+ *
+ * @author Riyad
+ */
+public class UserAccount implements UserAccountStub {
+    UserProfileStub userProfileStub;
+    ArrayList<UserProfileStub> friendsList;
+
+    public void setFriendsList(ArrayList<UserProfileStub> friendsList) {
+        this.friendsList = friendsList;
+    }
+
+    public void setUserProfile(UserProfileStub userProfileStub) {
+        this.userProfileStub = userProfileStub;
+    }
+    
+    @Override
+    public ArrayList<UserProfileStub> getFriendsList() {
+        return friendsList;
+    }
+
+    @Override
+    public UserProfileStub viewProfile() throws RemoteException {
+        return userProfileStub;
+    }
+
+    @Override
+    public void updateProfile() throws RemoteException {
+    }
+
+    @Override
+    public void getUpdates() throws RemoteException {
+    }
+
+    @Override
+    public void postUpdates() throws RemoteException {
+    }
+}
