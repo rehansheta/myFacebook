@@ -10,3 +10,10 @@ The UserAccount objects should maintain a list of friends' RORs and an informati
 1. viewProfile/updateProfile, which allow users to view and update their profile information. The profile can contain: user name, profession, living city, company, college name and graduation year etc;<br>
 2. postUpdates: which allows a user to post new information on the walls of his/her friends;<br>
 3. getUpdates, which allows a user to retrieve the new updates from all his/her friends. For the Client program, it should provide an interactive user interface (text or GUI based) that allows users to interact with the Server program (such as accept user's input, invoke corresponding RMIs and display the returned information.)
+
+Install
+-------
+1. Change the registry host in myFacebook.Constants.java of Client project
+2. Create database using the provided sql sript in Server project
+3. Compile both the project
+4. See the link to run the projects: http://docs.oracle.com/javase/tutorial/rmi/running.html
