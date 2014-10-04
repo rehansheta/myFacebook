@@ -1,7 +1,7 @@
 MyFacebook
 =========
 
-This project is a prototype of a social network application that consists of a Server program and a Client program implemented using Java RMI. Here, the Server program creates/maintains a SocialNetworkServant remote object. The object provides the following basic functions:
+This project is a prototype of a social network application that consists of a Server program and a Client program implemented using Java RMI. Here, the Server program creates/maintains a SocialNetworkServant remote object. The object provides the following basic functions:<br>
 1. createAccount, which creates a UserAccount object based on the provided information and returns its remote object reference (ROR) to client;<br>
 2. loginAccount, which return a user's ROR based on the login information;<br>
 3. searchForFriends, which allows users to search for potential friends based on living city and/or college and should return a list of users' RORs;<br>
